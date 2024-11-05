@@ -105,6 +105,18 @@ public class AudioPlaybackService extends Service implements AudioPlaybackWorker
     @Override
     public void onDestroy() {
         stop();
+    
+        // Release the WakeLock if it's held
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+        }
+    
+        // Remove any pending callbacks from the handler
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
+    
+        super.onDestroy();
     }
 
     @SuppressLint("InlinedApi")
@@ -178,6 +190,10 @@ public class AudioPlaybackService extends Service implements AudioPlaybackWorker
         if (playWorkerThread != null) {
             playWorkerThread.interrupt();
         }
+    
+        // Nullify references to help with garbage collection
+        playWorker = null;
+        playWorkerThread = null;
     }
 
     public String getServerPref() {
