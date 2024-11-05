@@ -10,6 +10,15 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/audiodescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="6dp"
+            android:layout_gravity="center_horizontal|center"
+            android:gravity="center"
+            android:text="@string/audio_description" />
+
         <LinearLayout
             android:id="@+id/LinearLayoutServer"
             android:layout_width="match_parent"
@@ -25,11 +34,11 @@
                 android:gravity="center"
                 android:text="CONFIG CONNECTION"
                 android:textStyle="bold"
-                android:textSize="20sp" /> <!-- Change the size as needed -->
+                android:textSize="20sp" />
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/LinearLayoutServer"
+            android:id="@+id/LinearLayoutServerInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"

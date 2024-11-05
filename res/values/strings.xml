@@ -587,6 +587,7 @@
 
     <!-- Nethunter Audio -->
     <string name="module_name">NetHunter Audio</string>
+    <string name="audio_description">This module allow Chroot audio playback to Android environment over local server, ensuring seamless playback of HQ-Audio output through the main speakers.</string>
     <string name="auto_start">Auto Start</string>
     <string name="playback_service_status">NH Playback %1$s</string>
     <string name="playback_status_starting">Starting</string>
