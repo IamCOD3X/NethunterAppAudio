@@ -24,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -167,11 +168,29 @@ public class AudioFragment extends Fragment {
     }
 
     private void setupDefaultAudioConfig() {
-        ArrayAdapter<Long> bufferAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, VALUES_BUFFER_HEADROOM);
+        // Format values for buffer headroom and target latency as seconds
+        List<String> formattedBufferHeadroom = formatValuesAsSeconds(VALUES_BUFFER_HEADROOM);
+        List<String> formattedTargetLatency = formatValuesAsSeconds(VALUES_TARGET_LATENCY);
+
+        // Set up adapters with the formatted string values
+        ArrayAdapter<String> bufferAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, formattedBufferHeadroom);
         bufferHeadroomSpinner.setAdapter(bufferAdapter);
 
-        ArrayAdapter<Long> latencyAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, VALUES_TARGET_LATENCY);
+        ArrayAdapter<String> latencyAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, formattedTargetLatency);
         targetLatencySpinner.setAdapter(latencyAdapter);
+    }
+
+    // Helper method to format values as seconds
+    private List<String> formatValuesAsSeconds(List<Long> values) {
+        List<String> formattedValues = new ArrayList<>();
+        for (Long value : values) {
+            if (value >= 0) {
+                formattedValues.add(String.format(Locale.getDefault(), "%.3fs", value / 1000000.0));
+            } else {
+                formattedValues.add("Default"); // or another label for special values like -1
+            }
+        }
+        return formattedValues;
     }
 
     private String getDayWithSuffix(int day) {
