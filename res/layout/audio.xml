@@ -162,7 +162,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="ABOUT APP"
+            android:text="ABOUT MODULE"
             android:textStyle="bold"
             android:textSize="20sp" />
 
@@ -194,14 +194,6 @@
                 android:textAppearance="@style/TextAppearance.VersionInfo" />
 
             <TextView
-                android:id="@+id/buildRevisionLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
-                android:text="@string/build_revision"
-                android:textAppearance="@style/TextAppearance.VersionInfo" />
-
-            <TextView
                 android:id="@+id/buildTimeLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -210,12 +202,12 @@
                 android:textAppearance="@style/TextAppearance.VersionInfo" />
 
             <TextView
-                android:id="@+id/appInfoLabel"
+                android:id="@+id/moduleInfoLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="4dp"
                 android:ellipsize="end"
-                android:text="@string/appInfo"
+                android:text="@string/moduleInfo"
                 android:textAppearance="@style/TextAppearance.VersionInfo" />
         </LinearLayout>
 
