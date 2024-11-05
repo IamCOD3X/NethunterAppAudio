@@ -116,7 +116,7 @@ public class AudioPlaybackWorker implements Runnable {
             if (stopped && e instanceof SocketException) {
                 handler.post(() -> listener.onPlaybackStopped(this));
             } else {
-                Log.e(AudioPlaybackWorker.class.getSimpleName(), "stopWithError", e);
+                Log.e(AudioPlaybackWorker.class.getSimpleName(), "stopWithError: " + e.getMessage(), e);
                 error = e;
                 handler.post(() -> listener.onPlaybackError(this, e));
             }
