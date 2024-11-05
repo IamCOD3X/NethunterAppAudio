@@ -52,6 +52,8 @@ public class AudioFragment extends Fragment {
     private TextView buildTimeLabel;
     private TextView moduleVerLabel;
 
+    private Throwable error;
+
     private AudioPlaybackService boundService;
     private int itemId; // Store the itemId passed via newInstance
 
@@ -74,6 +76,10 @@ public class AudioFragment extends Fragment {
             boundService = null;  // Clear the reference when the service is disconnected
         }
     };
+
+    public Throwable getError() {
+        return error;
+    }
 
     // Add the newInstance method
     public static AudioFragment newInstance(int itemId) {
@@ -297,7 +303,7 @@ public class AudioFragment extends Fragment {
     }
 
     public void play() {
-        String server = serverInput.getText().toString();
+        String server = serverInput.getText().toString().trim();
         int port;
         try {
             port = Integer.parseInt(portInput.getText().toString());
@@ -305,13 +311,25 @@ public class AudioFragment extends Fragment {
             portInput.setError("Invalid port number");
             return;
         }
+        // Clear any previous error messages
         portInput.setError(null);
 
+        if (server.isEmpty()) {
+            serverInput.setError("Server cannot be empty");
+            return;
+        }
+
         if (boundService != null) {
+            // Log the server and port being used
+            Log.d(TAG, "Attempting to play on server: " + server + " port: " + port);
+
+            // Set preferences and start playback
             boundService.setPrefs(server, port, autoStartCheckBox.isChecked());
             boundService.play(server, port);
         } else {
+            // Handle case where service is not bound
             errorText.setText("Service not bound. Please try again.");
+            Log.e(TAG, "Service not bound when attempting to play.");
         }
     }
 
