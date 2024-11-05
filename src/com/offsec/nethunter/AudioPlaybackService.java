@@ -105,17 +105,17 @@ public class AudioPlaybackService extends Service implements AudioPlaybackWorker
     @Override
     public void onDestroy() {
         stop();
-    
+
         // Release the WakeLock if it's held
         if (wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
         }
-    
+
         // Remove any pending callbacks from the handler
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
         }
-    
+
         super.onDestroy();
     }
 
@@ -180,6 +180,7 @@ public class AudioPlaybackService extends Service implements AudioPlaybackWorker
             notifyState(AudioPlayState.STOPPING);
         }
         stopWorker();
+        notifyState(AudioPlayState.STOPPED);
     }
 
     @MainThread
