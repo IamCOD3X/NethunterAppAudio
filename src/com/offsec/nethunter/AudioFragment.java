@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -18,74 +20,160 @@ import android.widget.TextView;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 
-import java.util.Arrays;
-import java.util.List;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Arrays;
+import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
+public class AudioFragment extends Fragment {
 
-
-public class AudioFragment extends AppCompatActivity {
-
+    public final static String TAG = "AudioFragment";
     public static final int DEFAULT_INDEX_BUFFER_HEADROOM = 4;
     public static final int DEFAULT_INDEX_TARGET_LATENCY = 6;
 
-    private static final List<Long> VALUES_BUFFER_HEADROOM =
-            Arrays.asList(0L, 15625L, 31250L, 62500L, 125000L, 250000L, 500000L, 1000000L, 2000000L);
-    private static final List<Long> VALUES_TARGET_LATENCY =
-            Arrays.asList(0L, 15625L, 31250L, 62500L, 125000L, 250000L, 500000L, 1000000L, 2000000L, 5000000L, 10000000L, -1L);
+    private static final List<Long> VALUES_BUFFER_HEADROOM = Arrays.asList(0L, 15625L, 31250L, 62500L, 125000L, 250000L, 500000L, 1000000L, 2000000L);
+    private static final List<Long> VALUES_TARGET_LATENCY = Arrays.asList(0L, 15625L, 31250L, 62500L, 125000L, 250000L, 500000L, 1000000L, 2000000L, 5000000L, 10000000L, -1L);
 
-    private Button playButton = null;
+    private Button playButton;
     private Spinner bufferHeadroomSpinner;
     private Spinner targetLatencySpinner;
-    private AudioBufferSizeAdapter bufferHeadroomAdapter;
-    private AudioBufferSizeAdapter targetLatencyAdapter;
     private EditText serverInput;
     private EditText portInput;
-    private CheckBox autoStartCheckBox = null;
+    private CheckBox autoStartCheckBox;
     private TextView errorText;
+    private TextView moduleInfoLabel;
+    private TextView builderinfoLabel;
+    private TextView buildTimeLabel;
+    private TextView moduleVerLabel;
 
     private AudioPlaybackService boundService;
+    private int itemId; // Store the itemId passed via newInstance
 
     private final ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
-            // This is called when the connection with the service has been
-            // established, giving us the service object we can use to
-            // interact with the service.  Because we have bound to a explicit
-            // service that we know is running in our own process, we can
-            // cast its IBinder to a concrete class and directly access it.
             boundService = ((AudioPlaybackService.LocalBinder) service).getService();
+            if (boundService != null) {
+                // Now that the service is bound, update the UI and enable the play button
+                boundService.playState().observe(getViewLifecycleOwner(), playState -> updatePlayState(playState));
+                boundService.showNotification();
+                updatePrefs(boundService);
 
-            boundService.playState().observe(AudioFragment.this,
-                    playState -> updatePlayState(playState));
-
-            boundService.showNotification();
-
-            updatePrefs(boundService);
-
-            if (boundService.getAutostartPref() && boundService.isStartable()) {
-                play();
+                if (boundService.getAutostartPref() && boundService.isStartable()) {
+                    play(); // Optionally start playback if autostart is enabled
+                }
             }
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            boundService.playState().removeObservers(AudioFragment.this);
-
-            // This is called when the connection with the service has been
-            // unexpectedly disconnected -- that is, its process crashed.
-            // Because it is running in our same process, we should never
-            // see this happen.
-            boundService = null;
+            boundService = null;  // Clear the reference when the service is disconnected
         }
     };
 
-    // Method to get the day with suffix (st, nd, rd, th)
+    // Add the newInstance method
+    public static AudioFragment newInstance(int itemId) {
+        AudioFragment fragment = new AudioFragment();
+        Bundle args = new Bundle();
+        args.putInt("ITEM_ID", itemId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateAudioFragment");
+
+        // Retrieve the itemId passed in newInstance
+        if (getArguments() != null) {
+            itemId = getArguments().getInt("ITEM_ID", -1);
+        }
+
+        // Log or use the itemId as needed
+        Log.d(TAG, "Received itemId: " + itemId);
+
+        // Inflate the layout for this fragment
+        View view = inflater.inflate(R.layout.audio, container, false);
+
+        // Initialize UI elements
+        serverInput = view.findViewById(R.id.EditTextServer);
+        portInput = view.findViewById(R.id.EditTextPort);
+        autoStartCheckBox = view.findViewById(R.id.auto_start);
+        playButton = view.findViewById(R.id.ButtonPlay);
+        errorText = view.findViewById(R.id.errorText);
+        bufferHeadroomSpinner = view.findViewById(R.id.bufferHeadroomSpinner);
+        targetLatencySpinner = view.findViewById(R.id.targetLatencySpinner);
+        moduleInfoLabel = view.findViewById(R.id.moduleInfoLabel);
+        builderinfoLabel = view.findViewById(R.id.builderinfoLabel);
+        buildTimeLabel = view.findViewById(R.id.buildTimeLabel);
+        moduleVerLabel = view.findViewById(R.id.buildVersionLabel);
+
+        // Setting default value at with our script will run
+        serverInput.setText("127.0.0.1");
+        portInput.setText("8000");
+
+        // Add the calendar, build time, build version and app info logic
+        Calendar calendar = Calendar.getInstance();
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        String dayWithSuffix = getDayWithSuffix(day);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy | HH:mm:ss", Locale.getDefault());
+        String dateAndTime = dayWithSuffix + " " + sdf.format(new Date());
+        buildTimeLabel.setText("Build Time: " + dateAndTime);
+
+        String builderinfo = getString(R.string.builderinfo);
+        builderinfoLabel.setText("Maintainer: " + builderinfo);
+
+        String moduleInfo = getString(R.string.moduleInfo);
+        moduleInfoLabel.setText("Info: " + moduleInfo);
+
+        String BuildVerInfo = getString(R.string.build_version);
+        moduleVerLabel.setText("Version: " + BuildVerInfo);
+
+        playButton.setOnClickListener(v -> {
+            if (boundService != null) {
+                if (boundService.getPlayState().isActive()) {
+                    stop();
+                } else {
+                    play();
+                }
+            } else {
+                // Optionally, show a message or handle the case where the service is not connected yet
+                errorText.setText("Service not connected yet. Please wait.");
+            }
+        });
+
+        // Set up spinners with default values
+        setupDefaultAudioConfig();
+
+        return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Bind to AudioPlaybackService
+        Intent intent = new Intent(getActivity(), AudioPlaybackService.class);
+        getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onStop() {
+        getActivity().unbindService(mConnection);
+        super.onStop();
+    }
+
+    private void setupDefaultAudioConfig() {
+        ArrayAdapter<Long> bufferAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, VALUES_BUFFER_HEADROOM);
+        bufferHeadroomSpinner.setAdapter(bufferAdapter);
+
+        ArrayAdapter<Long> latencyAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, VALUES_TARGET_LATENCY);
+        targetLatencySpinner.setAdapter(latencyAdapter);
+    }
+
     private String getDayWithSuffix(int day) {
         if (day >= 11 && day <= 13) {
             return day + "th";
@@ -98,173 +186,98 @@ public class AudioFragment extends AppCompatActivity {
         }
     }
 
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.audio, container, false);
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.audio);
-
-        Calendar calendar = Calendar.getInstance();
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-        String dayWithSuffix = getDayWithSuffix(day);
-
-        TextView appInfoLabel = findViewById(R.id.appInfoLabel);
-        TextView builderinfoLabel = findViewById(R.id.builderinfoLabel);
-        TextView buildTimeLabel = findViewById(R.id.buildTimeLabel);
-        serverInput = findViewById(R.id.EditTextServer);
-        portInput = findViewById(R.id.EditTextPort);
-        autoStartCheckBox = findViewById(R.id.auto_start);
-        playButton = findViewById(R.id.ButtonPlay);
-        errorText = findViewById(R.id.errorText);
-        bufferHeadroomSpinner = findViewById(R.id.bufferHeadroomSpinner);
-        targetLatencySpinner = findViewById(R.id.targetLatencySpinner);
-
-        bufferHeadroomAdapter = new AudioBufferSizeAdapter(this, VALUES_BUFFER_HEADROOM);
-        targetLatencyAdapter = new AudioBufferSizeAdapter(this, VALUES_TARGET_LATENCY);
-
-        // Set the current date and time in the buildTimeLabel TextView
-        SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy | HH:mm:ss", Locale.getDefault());
-        String dateAndTime = dayWithSuffix + " " + sdf.format(new Date());
-        buildTimeLabel.setText("Build Time : "+ dateAndTime);
-
-        // Set Maintainer Info
-        String builderinfo = getString(R.string.builderinfo);
-        builderinfoLabel.setText("Maintainer : "+ builderinfo);
-
-        // Set App Info
-        String appInfo = getString(R.string.appInfo);
-        appInfoLabel.setText("Info : "+ appInfo);
-
-        playButton.setOnClickListener(v -> {
-            if (boundService.getPlayState().isActive()) {
-                stop();
-            } else {
-                play();
-            }
-        });
-
-        bindService(new Intent(this, AudioPlaybackService.class),
-                mConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onDestroy() {
-        unbindService(mConnection);
-        super.onDestroy();
-    }
-
     private void updatePrefs(AudioPlaybackService service) {
         serverInput.setText(service.getServerPref());
-        int port = service.getPortPref();
-        portInput.setText(port > 0 ? Integer.toString(port) : "");
+        portInput.setText(String.valueOf(service.getPortPref()));
         autoStartCheckBox.setChecked(service.getAutostartPref());
-        setUpSpinner(bufferHeadroomSpinner, bufferHeadroomAdapter, service.getBufferHeadroom(), DEFAULT_INDEX_BUFFER_HEADROOM);
-        setUpSpinner(targetLatencySpinner, targetLatencyAdapter, service.getTargetLatency(), DEFAULT_INDEX_TARGET_LATENCY);
+
+        setUpSpinner(bufferHeadroomSpinner, VALUES_BUFFER_HEADROOM, service.getBufferHeadroom(), DEFAULT_INDEX_BUFFER_HEADROOM);
+        setUpSpinner(targetLatencySpinner, VALUES_TARGET_LATENCY, service.getTargetLatency(), DEFAULT_INDEX_TARGET_LATENCY);
     }
 
-    private void setUpSpinner(Spinner spinner, AudioBufferSizeAdapter adapter, long value, int defaultIndex) {
-        spinner.setOnItemSelectedListener(null);
-
-        spinner.setAdapter(adapter);
-
-        int pos = adapter.getItemPosition(value);
+    private void setUpSpinner(Spinner spinner, List<Long> values, long value, int defaultIndex) {
+        int pos = values.indexOf(value);
         spinner.setSelection(pos >= 0 ? pos : defaultIndex);
 
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (boundService != null) {
-                    long headroomUsec = bufferHeadroomAdapter.getItem(bufferHeadroomSpinner.getSelectedItemPosition());
-                    long latencyUsec = targetLatencyAdapter.getItem(targetLatencySpinner.getSelectedItemPosition());
+                    long headroomUsec = VALUES_BUFFER_HEADROOM.get(bufferHeadroomSpinner.getSelectedItemPosition());
+                    long latencyUsec = VALUES_TARGET_LATENCY.get(targetLatencySpinner.getSelectedItemPosition());
                     boundService.setBufferUsec(headroomUsec, latencyUsec);
                 }
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
-    private void updatePlayState(@Nullable AudioPlayState playState) {
-        if (playState == null) {
-            playButton.setText(R.string.btn_waiting);
-            playButton.setEnabled(false);
-            errorText.setText(""); // Clear any existing error messages
-            return;
-        }
+    private void updatePlayState(@NonNull AudioPlayState playState) {
+        playButton.setText(getPlayButtonText(playState));
+        playButton.setEnabled(true);
 
         switch (playState) {
             case STOPPED:
-                playButton.setText(R.string.btn_play);
-                playButton.setEnabled(true);
-                appendErrorText("Disconnected State", getResources().getColor(android.R.color.holo_orange_light));
+                appendErrorText("Disconnected State", android.R.color.holo_orange_light);
                 appendDashes();
                 break;
             case STARTING:
-                playButton.setText(R.string.btn_starting);
-                playButton.setEnabled(true);
-                appendErrorText("Connection Started", getResources().getColor(android.R.color.holo_green_dark));
+                appendErrorText("Connection Started", android.R.color.holo_green_dark);
                 break;
             case BUFFERING:
-                playButton.setText(R.string.btn_buffering);
-                playButton.setEnabled(true);
-                appendErrorText("Establishing Connection", getResources().getColor(android.R.color.holo_orange_light));
+                appendErrorText("Establishing Connection", android.R.color.holo_orange_light);
                 break;
             case STARTED:
-                playButton.setText(R.string.btn_stop);
-                playButton.setEnabled(true);
-                appendErrorText("Everything is working fine! Enjoy!", getResources().getColor(android.R.color.holo_green_dark));
+                appendErrorText("Everything is working fine! Enjoy!", android.R.color.holo_green_dark);
                 appendDashes();
                 break;
             case STOPPING:
-                playButton.setText(R.string.btn_stopping);
-                playButton.setEnabled(false);
-                appendErrorText("Connection Disconnecting", getResources().getColor(android.R.color.holo_red_light));
+                appendErrorText("Connection Disconnecting", android.R.color.holo_red_light);
                 break;
         }
 
-        // Handle any errors
-        Throwable error = boundService == null ? null : boundService.getError();
-        if (error != null) {
-            String text = formatMessage(error);
-            appendErrorText("An error occurred: " + boundService.getError().getMessage(), getResources().getColor(android.R.color.holo_red_dark));
+        if (boundService != null && boundService.getError() != null) {
+            appendErrorText("An error occurred: " + boundService.getError().getMessage(), android.R.color.holo_red_dark);
             appendDashes();
         }
     }
 
-    private void appendDashes() {
-        String dashes = "------------------\n";
-        SpannableString spannable = new SpannableString(dashes);
-        int purpleColor = getResources().getColor(android.R.color.holo_purple);
-        spannable.setSpan(new ForegroundColorSpan(purpleColor), 0, spannable.length(), 0); // Set color
-        errorText.append(spannable);
-    }
-
-    private void appendErrorText(String newErrorMessage, int color) {
-        if (!newErrorMessage.isEmpty()) {
-            // Create a SpannableString to apply color
-            SpannableString spannable = new SpannableString(newErrorMessage + "\n");
-            spannable.setSpan(new ForegroundColorSpan(color), 0, spannable.length(), 0);
-            errorText.append(spannable);
+    private String getPlayButtonText(@NonNull AudioPlayState playState) {
+        switch (playState) {
+            case STOPPED:
+                return getString(R.string.btn_play);
+            case STARTING:
+                return getString(R.string.btn_starting);
+            case BUFFERING:
+                return getString(R.string.btn_buffering);
+            case STARTED:
+                return getString(R.string.btn_stop);
+            case STOPPING:
+                return getString(R.string.btn_stopping);
+            default:
+                return getString(R.string.btn_waiting);
         }
     }
 
+    private void appendErrorText(String message, int colorId) {
+        SpannableString spannable = new SpannableString(message + "\n");
+        spannable.setSpan(new ForegroundColorSpan(getResources().getColor(colorId)), 0, spannable.length(), 0);
+        errorText.append(spannable);
+    }
+
+    private void appendDashes() {
+        SpannableString dashes = new SpannableString("------------------\n");
+        dashes.setSpan(new ForegroundColorSpan(getResources().getColor(android.R.color.holo_purple)), 0, dashes.length(), 0);
+        errorText.append(dashes);
+    }
+
     public void play() {
-        String server = serverInput.getText().toString().trim();
+        String server = serverInput.getText().toString();
         int port;
         try {
             port = Integer.parseInt(portInput.getText().toString());
-            if (port < 1 || port > 65535) { // Port range check
-                portInput.setError("Port must be between 1 and 65535");
-                return;
-            }
         } catch (NumberFormatException e) {
             portInput.setError("Invalid port number");
             return;
@@ -274,6 +287,8 @@ public class AudioFragment extends AppCompatActivity {
         if (boundService != null) {
             boundService.setPrefs(server, port, autoStartCheckBox.isChecked());
             boundService.play(server, port);
+        } else {
+            errorText.setText("Service not bound. Please try again.");
         }
     }
 
@@ -282,12 +297,4 @@ public class AudioFragment extends AppCompatActivity {
             boundService.stop();
         }
     }
-
-    @NonNull
-    private String formatMessage(Throwable error) {
-        String msg = error.getLocalizedMessage();
-        return error.getClass().getName()
-                + (msg == null ? "" : ": " + msg);
-    }
-
 }
