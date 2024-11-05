@@ -346,7 +346,7 @@
     <string name="drawertitlecustomcommands">Custom Commands</string>
     <string name="drawertitlemacchanger">MAC Changer</string>
     <string name="drawertitlevncmanager">KeX Manager</string>
-    <string name="drawertitleaudio">Nethunter Audio</string>
+    <string name="drawertitleaudio">Audio Manager</string>
     <string name="drawertitlehid">HID Attacks</string>
     <string name="drawertitleduckhunter">DuckHunter HID</string>
     <string name="drawertitlebadusb">Bad USB MITM Attack</string>
@@ -613,6 +613,5 @@
     <string name="builderinfo">IamCOD3X</string>
     <string name="build_time">BUILD_TIME</string>
     <string name="build_version">1.0</string>
-    <string name="build_revision">10000</string>
-    <string name="appInfo">Module Based on PulseDroid by dront78</string>
+    <string name="moduleInfo">Module Based on PulseDroid by dront78</string>
 </resources>
