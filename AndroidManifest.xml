@@ -94,7 +94,7 @@
                 android:value=".DeAuthWhitelistActivity" />
         </activity>
         <activity
-            android:name=".NHAudioActivity"
+            android:name=".AudioFragment"
             android:allowBackup="true"
             android:fullBackupContent="true"
             android:label="@string/module_name"
