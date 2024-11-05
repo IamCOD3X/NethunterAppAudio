@@ -241,12 +241,15 @@ public class AudioFragment extends Fragment {
             case STOPPED:
                 appendErrorText("Disconnected State", android.R.color.holo_orange_light);
                 appendDashes();
+                playButton.setEnabled(false);
                 break;
             case STARTING:
                 appendErrorText("Connection Started", android.R.color.holo_green_dark);
+                playButton.setEnabled(false);
                 break;
             case BUFFERING:
                 appendErrorText("Establishing Connection", android.R.color.holo_orange_light);
+                playButton.setEnabled(false);
                 break;
             case STARTED:
                 appendErrorText("Everything is working fine! Enjoy!", android.R.color.holo_green_dark);
@@ -254,6 +257,7 @@ public class AudioFragment extends Fragment {
                 break;
             case STOPPING:
                 appendErrorText("Connection Disconnecting", android.R.color.holo_red_light);
+                playButton.setEnabled(false);
                 break;
         }
 
