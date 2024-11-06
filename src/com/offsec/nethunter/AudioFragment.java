@@ -23,10 +23,7 @@ import android.text.style.ForegroundColorSpan;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +46,6 @@ public class AudioFragment extends Fragment {
     private TextView errorText;
     private TextView moduleInfoLabel;
     private TextView builderinfoLabel;
-    private TextView buildTimeLabel;
     private TextView moduleVerLabel;
 
     private Throwable error;
@@ -115,21 +111,7 @@ public class AudioFragment extends Fragment {
         targetLatencySpinner = view.findViewById(R.id.targetLatencySpinner);
         moduleInfoLabel = view.findViewById(R.id.moduleInfoLabel);
         builderinfoLabel = view.findViewById(R.id.builderinfoLabel);
-        buildTimeLabel = view.findViewById(R.id.buildTimeLabel);
         moduleVerLabel = view.findViewById(R.id.buildVersionLabel);
-
-        // Setting default value at with our script will run
-        serverInput.setText("127.0.0.1");
-        portInput.setText("8000");
-
-        // Add the calendar, build time, build version and app info logic
-        Calendar calendar = Calendar.getInstance();
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-        String dayWithSuffix = getDayWithSuffix(day);
-
-        SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy | HH:mm:ss", Locale.getDefault());
-        String dateAndTime = dayWithSuffix + " " + sdf.format(new Date());
-        buildTimeLabel.setText("Build Time: " + dateAndTime);
 
         String builderinfo = getString(R.string.builderinfo);
         builderinfoLabel.setText("Maintainer: " + builderinfo);

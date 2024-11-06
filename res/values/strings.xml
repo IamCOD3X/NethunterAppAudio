@@ -612,7 +612,6 @@
     <string name="input_buffer_headroom">Buffer headroom</string>
     <string name="input_target_latency">Target latency</string>
     <string name="builderinfo">IamCOD3X</string>
-    <string name="build_time">BUILD_TIME</string>
     <string name="build_version">1.0</string>
     <string name="moduleInfo">Module Based on PulseDroid by dront78</string>
 </resources>

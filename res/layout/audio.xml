@@ -203,14 +203,6 @@
                 android:textAppearance="@style/TextAppearance.VersionInfo" />
 
             <TextView
-                android:id="@+id/buildTimeLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
-                android:text="@string/build_time"
-                android:textAppearance="@style/TextAppearance.VersionInfo" />
-
-            <TextView
                 android:id="@+id/moduleInfoLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
